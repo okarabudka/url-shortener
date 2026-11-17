@@ -1,4 +1,4 @@
-# go-short-urls
+# url-shortener
 
 A URL shortener REST service in Go with SQLite storage, structured logging and request validation.
 
