@@ -1,3 +1,4 @@
+// Package response builds the JSON bodies shared by all handlers.
 package response
 
 import (
@@ -7,22 +8,26 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// Response is the common part of every JSON response.
 type Response struct {
 	Status string `json:"status"`
 	Error  string `json:"error,omitempty"`
 }
 
+// Values of Response.Status.
 const (
 	StatusOK    = "OK"
 	StatusError = "Error"
 )
 
+// OK returns a success response.
 func OK() Response {
 	return Response{
 		Status: StatusOK,
 	}
 }
 
+// Error returns an error response with the given message.
 func Error(msg string) Response {
 	return Response{
 		Status: StatusError,
@@ -30,6 +35,7 @@ func Error(msg string) Response {
 	}
 }
 
+// ValidationError turns validator errors into one readable error response.
 func ValidationError(errs validator.ValidationErrors) Response {
 	var errMsgs []string
 

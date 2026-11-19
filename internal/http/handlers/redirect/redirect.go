@@ -52,6 +52,7 @@ func New(log *slog.Logger, urlGetter URLGetter) http.HandlerFunc {
 
 		log.Info("redirecting", slog.String("alias", alias), slog.String("url", target))
 
+		//nolint:gosec // Redirecting to stored URLs is the purpose; only authenticated users store them, and only http(s).
 		http.Redirect(w, r, target, http.StatusFound)
 	}
 }

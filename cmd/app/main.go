@@ -1,3 +1,4 @@
+// Command app runs the url-shortener HTTP service.
 package main
 
 import (

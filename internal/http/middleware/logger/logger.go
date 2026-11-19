@@ -1,12 +1,15 @@
+// Package logger provides the request logging middleware.
 package logger
 
 import (
-	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5/middleware"
 )
 
+// New returns a middleware that logs one line per request with status, size and duration.
 func New(log *slog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		log := log.With(

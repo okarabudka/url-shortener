@@ -1,3 +1,4 @@
+// Package sqlite stores links in a SQLite database.
 package sqlite
 
 import (
@@ -10,10 +11,12 @@ import (
 	"github.com/okarabudka/url-shortener/internal/storage"
 )
 
+// Storage is a SQLite-backed link store.
 type Storage struct {
 	db *sql.DB
 }
 
+// New opens the database at storagePath and creates the table if needed.
 func New(storagePath string) (*Storage, error) {
 	const op = "storage.sqlite.New"
 
@@ -40,6 +43,7 @@ func (s *Storage) Close() error {
 	return s.db.Close()
 }
 
+// SaveURL stores urlToSave under alias and returns its id, or storage.ErrURLExists if the alias is taken.
 func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 	const op = "storage.sqlite.SaveURL"
 
@@ -61,6 +65,7 @@ func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 	return id, nil
 }
 
+// GetURL returns the URL stored under alias, or storage.ErrURLNotFound.
 func (s *Storage) GetURL(alias string) (string, error) {
 	const op = "storage.sqlite.GetURL"
 
@@ -77,6 +82,7 @@ func (s *Storage) GetURL(alias string) (string, error) {
 	return resURL, nil
 }
 
+// DeleteURL deletes the link stored under alias, or returns storage.ErrURLNotFound.
 func (s *Storage) DeleteURL(alias string) error {
 	const op = "storage.sqlite.DeleteURL"
 

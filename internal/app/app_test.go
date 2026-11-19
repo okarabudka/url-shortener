@@ -97,7 +97,12 @@ func TestEndToEnd(t *testing.T) {
 	client := srv.Client()
 	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 
-	do := func(method, path, body string, auth bool) *http.Response {
+	type result struct {
+		StatusCode int
+		Location   string
+	}
+
+	do := func(method, path, body string, auth bool) result {
 		t.Helper()
 
 		req, err := http.NewRequestWithContext(t.Context(), method, srv.URL+path, strings.NewReader(body))
@@ -108,9 +113,9 @@ func TestEndToEnd(t *testing.T) {
 
 		res, err := client.Do(req)
 		require.NoError(t, err)
-		t.Cleanup(func() { _ = res.Body.Close() })
+		require.NoError(t, res.Body.Close())
 
-		return res
+		return result{StatusCode: res.StatusCode, Location: res.Header.Get("Location")}
 	}
 
 	link := `{"url":"https://example.com/some/long/path","alias":"example"}`
@@ -126,7 +131,7 @@ func TestEndToEnd(t *testing.T) {
 
 	res = do(http.MethodGet, "/example", "", false)
 	assert.Equal(t, http.StatusFound, res.StatusCode, "follow")
-	assert.Equal(t, "https://example.com/some/long/path", res.Header.Get("Location"))
+	assert.Equal(t, "https://example.com/some/long/path", res.Location)
 
 	res = do(http.MethodDelete, "/url/example", "", false)
 	assert.Equal(t, http.StatusUnauthorized, res.StatusCode, "delete without auth")

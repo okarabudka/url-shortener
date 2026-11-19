@@ -17,17 +17,20 @@ import (
 	"github.com/okarabudka/url-shortener/internal/storage"
 )
 
+// Request is the body of POST /url.
 type Request struct {
 	// http_url only accepts http and https, so links cannot point to javascript: or file: URLs.
 	URL   string `json:"url" validate:"required,http_url"`
 	Alias string `json:"alias,omitempty" validate:"omitempty,alphanum,max=32"`
 }
 
+// Response is the body of a successful POST /url.
 type Response struct {
 	resp.Response
 	Alias string `json:"alias,omitempty"`
 }
 
+// URLSaver stores a URL under an alias.
 type URLSaver interface {
 	SaveURL(urlToSave string, alias string) (int64, error)
 }

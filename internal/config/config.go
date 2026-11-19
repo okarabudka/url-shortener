@@ -10,6 +10,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+// Supported values of Config.Env.
 const (
 	EnvLocal = "local"
 	EnvDev   = "dev"
@@ -19,6 +20,7 @@ const (
 // DefaultPath is used when CONFIG_PATH is not set. It is relative to the working directory.
 const DefaultPath = "configs/config.yaml"
 
+// Config is the service configuration.
 type Config struct {
 	Env         string     `yaml:"env" env-default:"local"`
 	StoragePath string     `yaml:"db_storage_path" env:"STORAGE_PATH"`
@@ -26,6 +28,7 @@ type Config struct {
 	HTTPServer  HTTPServer `yaml:"http"`
 }
 
+// HTTPServer configures the HTTP listener and the Basic Auth credentials.
 type HTTPServer struct {
 	Address     string        `yaml:"address" env:"HTTP_ADDRESS" env-default:"localhost:8080"`
 	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
