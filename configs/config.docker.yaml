@@ -1,0 +1,8 @@
+# Configuration baked into the Docker image. Credentials come from HTTP_USER and HTTP_PASSWORD.
+env: prod
+db_storage_path: /data/storage.db
+alias_length: 6
+http:
+  address: 0.0.0.0:8080
+  timeout: 4s
+  idle_timeout: 60s
