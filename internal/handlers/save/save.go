@@ -10,10 +10,10 @@ import (
 	"github.com/go-playground/validator/v10"
 	"log/slog"
 
-	resp "short-urls/internal/lib/api/response"
-	"short-urls/internal/lib/logger/sqlite"
-	"short-urls/internal/lib/random"
-	"short-urls/internal/storage"
+	resp "github.com/okarabudka/url-shortener/internal/lib/api/response"
+	"github.com/okarabudka/url-shortener/internal/lib/logger/sqlite"
+	"github.com/okarabudka/url-shortener/internal/lib/random"
+	"github.com/okarabudka/url-shortener/internal/storage"
 )
 
 type Request struct {

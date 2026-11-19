@@ -6,11 +6,11 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"short-urls/internal/config"
-	"short-urls/internal/handlers/save"
-	sqliteLog "short-urls/internal/lib/logger/sqlite"
-	mwLogger "short-urls/internal/middleware/logger"
-	"short-urls/internal/storage/sqlite"
+	"github.com/okarabudka/url-shortener/internal/config"
+	"github.com/okarabudka/url-shortener/internal/handlers/save"
+	sqliteLog "github.com/okarabudka/url-shortener/internal/lib/logger/sqlite"
+	mwLogger "github.com/okarabudka/url-shortener/internal/middleware/logger"
+	"github.com/okarabudka/url-shortener/internal/storage/sqlite"
 )
 
 func main() {
