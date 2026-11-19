@@ -1,17 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/okarabudka/url-shortener/internal/config"
-	"github.com/okarabudka/url-shortener/internal/http/handlers/save"
-	mwLogger "github.com/okarabudka/url-shortener/internal/http/middleware/logger"
-	sl "github.com/okarabudka/url-shortener/internal/lib/logger/sl"
-	"github.com/okarabudka/url-shortener/internal/storage/sqlite"
 	"log/slog"
-	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/okarabudka/url-shortener/internal/app"
+	"github.com/okarabudka/url-shortener/internal/config"
+	"github.com/okarabudka/url-shortener/internal/lib/logger/sl"
 )
 
 func main() {
@@ -21,52 +20,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	log := initLogger(cfg.Env)
-	log.Info("Starting app")
-	log.Info("Debug level", slog.String("env", cfg.Env))
+	log := newLogger(cfg.Env)
 
-	storage, err := sqlite.New(cfg.StoragePath)
-	if err != nil {
-		log.Error("failed to init storage", sl.Err(err))
+	if err := run(cfg, log); err != nil {
+		log.Error("server failed", sl.Err(err))
 		os.Exit(1)
 	}
-
-	router := chi.NewRouter()
-
-	router.Use(middleware.RequestID)
-	router.Use(middleware.Logger)
-	router.Use(mwLogger.New(log))
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.URLFormat)
-
-	router.Post("/url", save.New(log, storage, cfg.AliasLength))
-
-	log.Info("starting server", slog.String("address", cfg.HTTPServer.Address))
-
-	srv := &http.Server{
-		Addr:         cfg.HTTPServer.Address,
-		Handler:      router,
-		ReadTimeout:  4,
-		WriteTimeout: 4,
-		IdleTimeout:  30,
-	}
-
-	if err := srv.ListenAndServe(); err != nil {
-		log.Error("failed to start server")
-	}
-
-	log.Info("server stopped")
 }
 
-func initLogger(env string) *slog.Logger {
-	var log *slog.Logger
+func run(cfg *config.Config, log *slog.Logger) error {
+	log.Info("starting url-shortener", slog.String("env", cfg.Env))
 
-	switch env {
-	case config.EnvLocal, config.EnvDev:
-		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	case config.EnvProd:
-		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	application, err := app.New(cfg, log)
+	if err != nil {
+		return err
 	}
 
-	return log
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	return application.Run(ctx)
+}
+
+func newLogger(env string) *slog.Logger {
+	level := slog.LevelDebug
+	if env == config.EnvProd {
+		level = slog.LevelInfo
+	}
+
+	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 }
