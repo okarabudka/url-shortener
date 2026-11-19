@@ -11,7 +11,7 @@ import (
 	"log/slog"
 
 	resp "github.com/okarabudka/url-shortener/internal/lib/api/response"
-	"github.com/okarabudka/url-shortener/internal/lib/logger/sqlite"
+	"github.com/okarabudka/url-shortener/internal/lib/logger/sl"
 	"github.com/okarabudka/url-shortener/internal/lib/random"
 	"github.com/okarabudka/url-shortener/internal/storage"
 )
@@ -56,7 +56,7 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			log.Error("failed to decode request body", sqlite.Err(err))
+			log.Error("failed to decode request body", sl.Err(err))
 
 			render.JSON(w, r, resp.Error("failed to decode request"))
 
@@ -69,7 +69,7 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			var validateErr validator.ValidationErrors
 			errors.As(err, &validateErr)
 
-			log.Error("invalid request", sqlite.Err(err))
+			log.Error("invalid request", sl.Err(err))
 
 			render.JSON(w, r, resp.ValidationError(validateErr))
 
@@ -90,7 +90,7 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			log.Error("failed to add url", sqlite.Err(err))
+			log.Error("failed to add url", sl.Err(err))
 
 			render.JSON(w, r, resp.Error("failed to add url"))
 

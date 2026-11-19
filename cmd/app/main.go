@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"os"
 	"github.com/okarabudka/url-shortener/internal/config"
-	"github.com/okarabudka/url-shortener/internal/handlers/save"
-	sqliteLog "github.com/okarabudka/url-shortener/internal/lib/logger/sqlite"
-	mwLogger "github.com/okarabudka/url-shortener/internal/middleware/logger"
+	"github.com/okarabudka/url-shortener/internal/http/handlers/save"
+	sl "github.com/okarabudka/url-shortener/internal/lib/logger/sl"
+	mwLogger "github.com/okarabudka/url-shortener/internal/http/middleware/logger"
 	"github.com/okarabudka/url-shortener/internal/storage/sqlite"
 )
 
@@ -22,7 +22,7 @@ func main() {
 
 	storage, err := sqlite.New(cfg.DbStoragePath)
 	if err != nil {
-		log.Error("failed to init storage", sqliteLog.Err(err))
+		log.Error("failed to init storage", sl.Err(err))
 		os.Exit(1)
 	}
 
