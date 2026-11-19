@@ -85,7 +85,7 @@ func TestRun_FailsWhenAddressIsInUse(t *testing.T) {
 	assert.Contains(t, err.Error(), "listen on "+busy.Addr().String())
 }
 
-// TestEndToEnd walks a link through its life: create, then follow it.
+// TestEndToEnd walks a link through its whole life: create, follow, delete, follow again.
 func TestEndToEnd(t *testing.T) {
 	a, err := New(testConfig(t), discardLogger())
 	require.NoError(t, err)
@@ -127,4 +127,16 @@ func TestEndToEnd(t *testing.T) {
 	res = do(http.MethodGet, "/example", "", false)
 	assert.Equal(t, http.StatusFound, res.StatusCode, "follow")
 	assert.Equal(t, "https://example.com/some/long/path", res.Header.Get("Location"))
+
+	res = do(http.MethodDelete, "/url/example", "", false)
+	assert.Equal(t, http.StatusUnauthorized, res.StatusCode, "delete without auth")
+
+	res = do(http.MethodDelete, "/url/example", "", true)
+	assert.Equal(t, http.StatusNoContent, res.StatusCode, "delete")
+
+	res = do(http.MethodDelete, "/url/example", "", true)
+	assert.Equal(t, http.StatusNotFound, res.StatusCode, "delete again")
+
+	res = do(http.MethodGet, "/example", "", false)
+	assert.Equal(t, http.StatusNotFound, res.StatusCode, "follow after delete")
 }

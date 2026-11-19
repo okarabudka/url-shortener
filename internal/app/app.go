@@ -15,6 +15,7 @@ import (
 
 	"github.com/okarabudka/url-shortener/internal/config"
 	"github.com/okarabudka/url-shortener/internal/http/handlers/redirect"
+	"github.com/okarabudka/url-shortener/internal/http/handlers/remove"
 	"github.com/okarabudka/url-shortener/internal/http/handlers/save"
 	mwLogger "github.com/okarabudka/url-shortener/internal/http/middleware/logger"
 	"github.com/okarabudka/url-shortener/internal/lib/logger/sl"
@@ -30,6 +31,7 @@ const authRealm = "url-shortener"
 type URLStorage interface {
 	save.URLSaver
 	redirect.URLGetter
+	remove.URLDeleter
 }
 
 // App is the assembled service.
@@ -60,7 +62,7 @@ func New(cfg *config.Config, log *slog.Logger) (*App, error) {
 	}, nil
 }
 
-// NewRouter registers the routes. Creating links requires Basic Auth, redirects are public.
+// NewRouter registers the routes. Creating and deleting links requires Basic Auth, redirects are public.
 func NewRouter(log *slog.Logger, st URLStorage, cfg *config.Config) http.Handler {
 	router := chi.NewRouter()
 
@@ -74,6 +76,7 @@ func NewRouter(log *slog.Logger, st URLStorage, cfg *config.Config) http.Handler
 		}))
 
 		r.Post("/url", save.New(log, st, cfg.AliasLength))
+		r.Delete("/url/{alias}", remove.New(log, st))
 	})
 
 	router.Get("/{alias}", redirect.New(log, st))
