@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/okarabudka/url-shortener/internal/config"
+	"github.com/okarabudka/url-shortener/internal/http/handlers/redirect"
 	"github.com/okarabudka/url-shortener/internal/http/handlers/save"
 	mwLogger "github.com/okarabudka/url-shortener/internal/http/middleware/logger"
 	"github.com/okarabudka/url-shortener/internal/lib/logger/sl"
@@ -26,6 +27,7 @@ const shutdownTimeout = 10 * time.Second
 // URLStorage is everything the HTTP handlers need from the storage.
 type URLStorage interface {
 	save.URLSaver
+	redirect.URLGetter
 }
 
 // App is the assembled service.
@@ -65,6 +67,7 @@ func NewRouter(log *slog.Logger, st URLStorage, cfg *config.Config) http.Handler
 	router.Use(middleware.Recoverer)
 
 	router.Post("/url", save.New(log, st, cfg.AliasLength))
+	router.Get("/{alias}", redirect.New(log, st))
 
 	return router
 }
