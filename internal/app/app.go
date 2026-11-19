@@ -24,6 +24,8 @@ import (
 // shutdownTimeout bounds how long in-flight requests may take after a stop signal.
 const shutdownTimeout = 10 * time.Second
 
+const authRealm = "url-shortener"
+
 // URLStorage is everything the HTTP handlers need from the storage.
 type URLStorage interface {
 	save.URLSaver
@@ -58,7 +60,7 @@ func New(cfg *config.Config, log *slog.Logger) (*App, error) {
 	}, nil
 }
 
-// NewRouter registers the routes.
+// NewRouter registers the routes. Creating links requires Basic Auth, redirects are public.
 func NewRouter(log *slog.Logger, st URLStorage, cfg *config.Config) http.Handler {
 	router := chi.NewRouter()
 
@@ -66,7 +68,14 @@ func NewRouter(log *slog.Logger, st URLStorage, cfg *config.Config) http.Handler
 	router.Use(mwLogger.New(log))
 	router.Use(middleware.Recoverer)
 
-	router.Post("/url", save.New(log, st, cfg.AliasLength))
+	router.Group(func(r chi.Router) {
+		r.Use(middleware.BasicAuth(authRealm, map[string]string{
+			cfg.HTTPServer.User: cfg.HTTPServer.Password,
+		}))
+
+		r.Post("/url", save.New(log, st, cfg.AliasLength))
+	})
+
 	router.Get("/{alias}", redirect.New(log, st))
 
 	return router

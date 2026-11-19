@@ -30,6 +30,9 @@ type HTTPServer struct {
 	Address     string        `yaml:"address" env:"HTTP_ADDRESS" env-default:"localhost:8080"`
 	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
+	// Credentials are read from the environment only, so they never end up in a committed file.
+	User     string `yaml:"-" env:"HTTP_USER"`
+	Password string `yaml:"-" env:"HTTP_PASSWORD"`
 }
 
 // Path returns the config file path from CONFIG_PATH or DefaultPath.
@@ -72,6 +75,10 @@ func (c *Config) validate() error {
 	}
 	if c.HTTPServer.Timeout <= 0 || c.HTTPServer.IdleTimeout <= 0 {
 		errs = append(errs, errors.New("http.timeout and http.idle_timeout must be positive durations such as 4s"))
+	}
+	// Closed by default: without credentials anyone could create and delete links.
+	if c.HTTPServer.User == "" || c.HTTPServer.Password == "" {
+		errs = append(errs, errors.New("HTTP_USER and HTTP_PASSWORD must be set, they protect creating and deleting links"))
 	}
 
 	return errors.Join(errs...)

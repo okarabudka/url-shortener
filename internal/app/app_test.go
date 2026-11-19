@@ -5,7 +5,10 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/okarabudka/url-shortener/internal/config"
+)
+
+const (
+	testUser     = "admin"
+	testPassword = "secret"
 )
 
 func testConfig(t *testing.T) *config.Config {
@@ -26,6 +34,8 @@ func testConfig(t *testing.T) *config.Config {
 			Address:     "127.0.0.1:0",
 			Timeout:     4 * time.Second,
 			IdleTimeout: 60 * time.Second,
+			User:        testUser,
+			Password:    testPassword,
 		},
 	}
 }
@@ -73,4 +83,48 @@ func TestRun_FailsWhenAddressIsInUse(t *testing.T) {
 	err = a.Run(t.Context())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "listen on "+busy.Addr().String())
+}
+
+// TestEndToEnd walks a link through its life: create, then follow it.
+func TestEndToEnd(t *testing.T) {
+	a, err := New(testConfig(t), discardLogger())
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = a.storage.Close() })
+
+	srv := httptest.NewServer(a.server.Handler)
+	t.Cleanup(srv.Close)
+
+	client := srv.Client()
+	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+
+	do := func(method, path, body string, auth bool) *http.Response {
+		t.Helper()
+
+		req, err := http.NewRequestWithContext(t.Context(), method, srv.URL+path, strings.NewReader(body))
+		require.NoError(t, err)
+		if auth {
+			req.SetBasicAuth(testUser, testPassword)
+		}
+
+		res, err := client.Do(req)
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = res.Body.Close() })
+
+		return res
+	}
+
+	link := `{"url":"https://example.com/some/long/path","alias":"example"}`
+
+	res := do(http.MethodPost, "/url", link, false)
+	assert.Equal(t, http.StatusUnauthorized, res.StatusCode, "create without auth")
+
+	res = do(http.MethodPost, "/url", link, true)
+	assert.Equal(t, http.StatusCreated, res.StatusCode, "create")
+
+	res = do(http.MethodPost, "/url", link, true)
+	assert.Equal(t, http.StatusConflict, res.StatusCode, "create with a taken alias")
+
+	res = do(http.MethodGet, "/example", "", false)
+	assert.Equal(t, http.StatusFound, res.StatusCode, "follow")
+	assert.Equal(t, "https://example.com/some/long/path", res.Header.Get("Location"))
 }

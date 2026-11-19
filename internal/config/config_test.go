@@ -51,6 +51,8 @@ func TestLoad_ReadsHTTPSectionFromFile(t *testing.T) {
 	assert.Equal(t, "127.0.0.1:9123", cfg.HTTPServer.Address)
 	assert.Equal(t, 4*time.Second, cfg.HTTPServer.Timeout)
 	assert.Equal(t, 90*time.Second, cfg.HTTPServer.IdleTimeout)
+	assert.Equal(t, "admin", cfg.HTTPServer.User)
+	assert.Equal(t, "secret", cfg.HTTPServer.Password)
 }
 
 func TestLoad_AppliesDefaults(t *testing.T) {
@@ -91,6 +93,12 @@ func TestLoad_Errors(t *testing.T) {
 			config:  "env: foo\ndb_storage_path: ./storage.db\n",
 			env:     credentials(),
 			wantErr: `env "foo" is unknown`,
+		},
+		{
+			name:    "missing password",
+			config:  "db_storage_path: ./storage.db\n",
+			env:     map[string]string{"HTTP_USER": "admin"},
+			wantErr: "HTTP_USER and HTTP_PASSWORD must be set",
 		},
 		{
 			name:    "missing storage path",
